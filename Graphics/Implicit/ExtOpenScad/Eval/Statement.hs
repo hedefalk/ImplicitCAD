@@ -1,10 +1,22 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 {-# LANGUAGE ViewPatterns, ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
+import Graphics.Implicit.ExtOpenScad.Definitions (
+                                                  Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
+                                                  Pattern(Name),
+                                                  Expr(LitE),
+                                                  OVal(OString, OBool, OList, OModule),
+                                                  VarLookup,
+                                                  StatementI(..)
+                                                 )
+
 import Graphics.Implicit.ExtOpenScad.Util.OVal
+
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Graphics.Implicit.ExtOpenScad.Util.StateC
 import Graphics.Implicit.ExtOpenScad.Eval.Expr
@@ -17,7 +29,7 @@ import qualified Control.Monad.State as State
 import           Control.Monad.State (get, liftIO)
 import qualified System.FilePath as FilePath
 
-
+-- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
 
 runStatementI (StatementI lineN (pat := expr)) = do
@@ -58,16 +70,17 @@ runStatementI (StatementI lineN (If expr a b)) = do
         _                 -> return ()
 
 runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
-    argTemplate' <- Monad.forM argTemplate $ \(name, defexpr) -> do
+    argTemplate' <- Monad.forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
-        return (name, defval)
+        return (name', defval)
     (varlookup, _, path, _, _) <- get
-    runStatementI $ StatementI lineN $ (Name name :=) $ LitE $ OModule $ \vals -> do
-        newNameVals <- Monad.forM argTemplate' $ \(name, maybeDef) -> do
+--  FIXME: \_? really?
+    runStatementI $ StatementI lineN $ (Name name :=) $ LitE $ OModule $ \_ -> do
+        newNameVals <- Monad.forM argTemplate' $ \(name', maybeDef) -> do
             val <- case maybeDef of
-                Just def -> argument name `defaultTo` def
-                Nothing  -> argument name
-            return (name, val)
+                Just def -> argument name' `defaultTo` def
+                Nothing  -> argument name'
+            return (name', val)
         let
 {-
             children = ONum $ fromIntegral $ length vals
@@ -97,8 +110,8 @@ runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
             val <- evalExpr expr
             return (posName, val)
         newVals <- case maybeMod of
-            Just (OModule mod) -> liftIO ioNewVals  where
-                argparser = mod childVals
+            Just (OModule mod') -> liftIO ioNewVals where
+                argparser = mod' childVals
                 ioNewVals = case fst $ argMap argsVal argparser of
                     Just iovals -> iovals
                     Nothing     -> return []
@@ -125,6 +138,8 @@ runStatementI (StatementI _ (Include name injectVals)) = do
             if injectVals then putVals (vals' ++ vals) else putVals vals
 
 
+runStatementI (StatementI _ DoNothing) = do
+  liftIO $ putStrLn $ "Do Nothing?"
 
 runSuite :: [StatementI] -> StateC ()
 runSuite stmts = Monad.mapM_ runStatementI stmts

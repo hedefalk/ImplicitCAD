@@ -1,5 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
@@ -109,5 +110,10 @@ getDist2 (x,y) symbObj =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
     in
-        sqrt ((max (abs (x1 - x)) (abs (x2 - x)))^2 + (max (abs (y1 - y)) (abs (y2 - y)))^2)
+        sqrt (
+              (max (abs (x1 - x)) (abs (x2 - x))) *
+              (max (abs (x1 - x)) (abs (x2 - x))) +
+              (max (abs (y1 - y)) (abs (y2 - y))) *
+              (max (abs (y1 - y)) (abs (y2 - y)))
+             )
 

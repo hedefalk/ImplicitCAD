@@ -1,14 +1,78 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, NoMonomorphismRestriction #-}
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Required.
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances, FlexibleInstances #-}
 
 -- A module exporting all of the primitives, and some operations on them.
+module Graphics.Implicit.Primitives (
+                                     translate,
+                                     scale,
+                                     complement, union, intersect, difference,
+                                     unionR, intersectR, differenceR,
+                                     shell,
+                                     extrudeR,
+                                     extrudeRM,
+                                     extrudeRotateR,
+                                     extrudeOnEdgeOf,
+                                     sphere,
+                                     rect3R,
+                                     circle,
+                                     cylinder,
+                                     cylinder2,
+                                     rectR,
+                                     polygonR,
+                                     rotateExtrude,
+                                     rotate3,
+                                     rotate3V,
+                                     pack3,
+                                     rotate,
+                                     pack2,
+                                     implicit
+                                    ) where
 
-module Graphics.Implicit.Primitives where
-
-import Graphics.Implicit.Definitions
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
+                                      SymbolicObj2(
+                                                   RectR,
+                                                   Circle,
+                                                   PolygonR,
+                                                   Complement2,
+                                                   UnionR2,
+                                                   DifferenceR2,
+                                                   IntersectR2,
+                                                   Translate2,
+                                                   Scale2,
+                                                   Rotate2,
+                                                   Outset2,
+                                                   Shell2,
+                                                   EmbedBoxedObj2
+                                                  ),
+                                      SymbolicObj3(
+                                                   Rect3R,
+                                                   Sphere,
+                                                   Cylinder,
+                                                   Complement3,
+                                                   UnionR3,
+                                                   DifferenceR3,
+                                                   IntersectR3,
+                                                   Translate3,
+                                                   Scale3,
+                                                   Rotate3,
+                                                   Rotate3V,
+                                                   Outset3,
+                                                   Shell3,
+                                                   EmbedBoxedObj3,
+                                                   ExtrudeR,
+                                                   ExtrudeRotateR,
+                                                   ExtrudeRM,
+                                                   RotateExtrude,
+                                                   ExtrudeOnEdgeOf
+                                                  )
+                                     )
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 
@@ -36,7 +100,11 @@ cylinder2 ::
 
 cylinder2 r1 r2 h = Cylinder h r1 r2
 
-cylinder :: ℝ -> ℝ -> SymbolicObj3
+cylinder ::
+    ℝ                   -- ^ Radius of the cylinder
+    -> ℝ                -- ^ Height of the cylinder
+    -> SymbolicObj3     -- ^ Resulting cylinder
+
 cylinder r = cylinder2 r r
 
 -- $ 2D Primitives
@@ -62,12 +130,32 @@ polygonR ::
 
 polygonR = PolygonR
 
-polygon :: [ℝ2] -> SymbolicObj2
-polygon = polygonR 0
-
 -- $ Shared Operations
 
 class Object obj vec | obj -> vec where
+    
+    -- | Complement an Object
+    complement ::
+        obj     -- ^ Object to complement
+        -> obj  -- ^ Result
+    
+    -- | Rounded union
+    unionR ::
+        ℝ        -- ^ The radius of rounding
+        -> [obj] -- ^ objects to union
+        -> obj   -- ^ Resulting object
+
+    -- | Rounded difference
+    differenceR ::
+        ℝ        -- ^ The radius of rounding
+        -> [obj] -- ^ Objects to difference
+        -> obj   -- ^ Resulting object
+
+    -- | Rounded minimum
+    intersectR ::
+        ℝ        -- ^ The radius of rounding
+        -> [obj] -- ^ Objects to intersect
+        -> obj   -- ^ Resulting object
     
     -- | Translate an object by a vector of appropriate dimension.
     translate ::
@@ -80,29 +168,6 @@ class Object obj vec | obj -> vec where
         vec     -- ^ Amount to scale by
         -> obj  -- ^ Object to scale
         -> obj  -- ^ Resulting scaled object
-    
-    -- | Complement an Object
-    complement ::
-        obj     -- ^ Object to complement
-        -> obj  -- ^ Result
-    
-    -- | Rounded union
-    unionR ::
-        ℝ        -- ^ The radius of rounding
-        -> [obj] -- ^ objects to union
-        -> obj   -- ^ Resulting object
-    
-    -- | Rounded minimum
-    intersectR ::
-        ℝ        -- ^ The radius of rounding
-        -> [obj] -- ^ Objects to intersect
-        -> obj   -- ^ Resulting object
-    
-    -- | Rounded difference
-    differenceR ::
-        ℝ        -- ^ The radius of rounding
-        -> [obj] -- ^ Objects to difference
-        -> obj   -- ^ Resulting object
 
     -- | Outset an object.
     outset ::
@@ -158,16 +223,22 @@ instance Object SymbolicObj3 ℝ3 where
     getImplicit = getImplicit3
     implicit a b= EmbedBoxedObj3 (a,b)
 
+union :: forall obj vec. Object obj vec => [obj] -> obj
 union = unionR 0
+
+difference :: forall obj vec. Object obj vec => [obj] -> obj
 difference = differenceR 0
 
---intersect :: forall obj vec. Object obj vec => [obj] -> obj
+intersect :: forall obj vec. Object obj vec => [obj] -> obj
 intersect = intersectR 0
 
 -- 3D operations
 
 extrudeR :: ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
 extrudeR = ExtrudeR
+
+extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
+extrudeRotateR = ExtrudeRotateR
 
 extrudeRM :: ℝ
     -> Maybe (ℝ -> ℝ)
@@ -195,7 +266,7 @@ rotate3 = Rotate3
 rotate3V :: ℝ -> ℝ3 -> SymbolicObj3 -> SymbolicObj3
 rotate3V = Rotate3V
 
-
+-- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs =
     let
@@ -206,12 +277,10 @@ pack3 (dx, dy) sep objs =
             (a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
             _ -> Nothing
 
-
 -- 2D operations
 
 rotate :: ℝ -> SymbolicObj2 -> SymbolicObj2
 rotate = Rotate2
-
 
 pack2 :: ℝ2 -> ℝ -> [SymbolicObj2] -> Maybe SymbolicObj2
 pack2 (dx, dy) sep objs =

@@ -5,13 +5,14 @@
 -- A module of math utilities.
 module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
+
 import Data.List (sort, sortBy)
 import Data.VectorSpace (magnitude, normalized, (^-^), (^+^), (*^))
 import Data.AffineSpace ((.-.))
-import Graphics.Implicit.Definitions (ℝ,ℝ2,ℝ3, Box2, (⋅))
 
 -- | The distance a point p is from a line segment (a,b)
-distFromLineSeg :: ℝ2 -> (ℝ2,ℝ2) -> ℝ
+distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
 distFromLineSeg p (a,b) = magnitude (closest .-. p)
     where
         ab = b ^-^ a
@@ -22,7 +23,7 @@ distFromLineSeg p (a,b) = magnitude (closest .-. p)
             | d > magnitude ab = b
             | otherwise = a ^+^ d *^ normalized ab
 
-box3sWithin :: ℝ -> (ℝ3, ℝ3) -> (ℝ3,ℝ3) -> Bool
+box3sWithin :: ℝ -> (ℝ3, ℝ3) -> (ℝ3, ℝ3) -> Bool
 box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)) =
     let
         near (a1, a2) (b1, b2) = not $ (a2 + r < b1) || (b2 + r < a1)

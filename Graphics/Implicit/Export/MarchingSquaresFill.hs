@@ -1,6 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
-
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
 import Graphics.Implicit.Definitions
@@ -15,8 +15,8 @@ getContourMesh :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [(ℝ2,ℝ2,ℝ2)]
 getContourMesh (x1, y1) (x2, y2) (dx, dy) obj =
     let
         -- How many steps will we take on each axis?
-        nx = fromIntegral $ ceiling $ (x2 - x1) / dx
-        ny = fromIntegral $ ceiling $ (y2 - y1) / dy
+        nx = fromInteger $ ceiling $ (x2 - x1) / dx
+        ny = fromInteger $ ceiling $ (y2 - y1) / dy
         -- Divide it up and compute the polylines
         trisOnGrid :: [[[(ℝ2,ℝ2,ℝ2)]]]
         trisOnGrid = [[getSquareTriangles

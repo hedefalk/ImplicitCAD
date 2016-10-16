@@ -1,52 +1,18 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser where
 
 import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Util.OVal
+import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 import qualified Data.Map   as Map
 import qualified Data.Maybe as Maybe
-import Control.Applicative(Alternative(..))
-import Control.Monad (mzero, mplus, MonadPlus, liftM, ap)
-
-instance Functor ArgParser where
-    fmap = liftM
-
-instance Applicative ArgParser where
-    pure = return
-    (<*>) = ap
-
-instance Monad ArgParser where
-
-    -- return is easy: if we want an ArgParser that just gives us a, that is
-    -- ArgParserTerminator a
-    return a = APTerminator a
-
-    -- Now things get more interesting. We need to describe how (>>=) works.
-    -- Let's get the hard ones out of the way first.
-    -- ArgParser actually
-    (AP str fallback doc f) >>= g = AP str fallback doc (\a -> (f a) >>= g)
-    (APFailIf b errmsg child) >>= g = APFailIf b errmsg (child >>= g)
-    -- These next to is easy, they just pass the work along to their child
-    (APExample str child) >>= g = APExample str (child >>= g)
-    (APTest str tests child) >>= g = APTest str tests (child >>= g)
-    -- And an ArgParserTerminator happily gives away the value it contains
-    (APTerminator a) >>= g = g a
-    (APBranch bs) >>= g = APBranch $ map (>>= g) bs
-
-instance MonadPlus ArgParser where
-    mzero = APFailIf True "" undefined
-    mplus (APBranch as) (APBranch bs) = APBranch ( as  ++  bs )
-    mplus (APBranch as) b             = APBranch ( as  ++ [b] )
-    mplus a             (APBranch bs) = APBranch ( [a] ++  bs )
-    mplus a             b             = APBranch [ a   ,   b  ]
-
-instance Alternative ArgParser where
-        (<|>) = mplus
-        empty = mzero
 
 -- * ArgParser building functions
 
@@ -64,11 +30,14 @@ argument name =
         -- Using /= Nothing would require Eq desiredType
         APFailIf (Maybe.isNothing val) errmsg $ APTerminator $ (\(Just a) -> a) val
 
+doc :: forall a. ArgParser a -> String -> ArgParser a
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
+doc _ _ = error "Impossible!"
 
 defaultTo :: forall a. (OTypeMirror a) => ArgParser a -> a -> ArgParser a
-defaultTo (AP name _ doc next) newDefVal =
-    AP name (Just $ toOObj newDefVal) doc next
+defaultTo (AP name _ doc' next) newDefVal =
+    AP name (Just $ toOObj newDefVal) doc' next
+defaultTo _ _ = error "Impossible!"
 
 -- ** example
 
@@ -83,6 +52,7 @@ test str = APTest str [] (return ())
 eulerCharacteristic :: ArgParser a -> Int -> ArgParser a
 eulerCharacteristic (APTest str tests child) χ =
     APTest str ((EulerCharacteristic χ) : tests) child
+eulerCharacteristic _ _ = error "Impossible!"
 
 -- * Tools for handeling ArgParsers
 
@@ -127,8 +97,8 @@ argMap2 a b (APTerminator val) =
         else []
     )
 
-argMap2 a b (APFailIf test err child) =
-    if test
+argMap2 a b (APFailIf testval err child) =
+    if testval
     then (Nothing, [err])
     else argMap2 a b child
 

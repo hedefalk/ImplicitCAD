@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
--- Released under the GNU GPL, see LICENSE
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
@@ -106,8 +106,8 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
         (xrange, yrange) = (map (\s -> x1+s*dx) $ range, map (\s -> y1+s*dy) $ range )
 
         h = case eitherh of
-            Left h -> h
-            Right hf -> hmax + 0.2*(hmax-hmin)
+              Left h' -> h'
+              Right hf -> hmax + 0.2*(hmax-hmin)
                 where
                     hs = [hf (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
@@ -154,3 +154,4 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     in
         ((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
 -- FIXME: add case for ExtrudeRotateR!
+getBox3(ExtrudeRotateR _ _ _ _ ) = error "ExtrudeRotateR implementation incomplete!"

@@ -1,6 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2014, 2015 Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2014, 2015, 2016 Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -44,6 +44,7 @@ stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> st
 -- Write a 32-bit little-endian float to a buffer.
 
 -- convert Floats and Doubles to Float.
+toFloat :: Real a => a -> Float
 toFloat = realToFrac :: (Real a) => a -> Float
 
 float32LE :: Float -> Write

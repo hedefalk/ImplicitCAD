@@ -1,3 +1,7 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 {-# LANGUAGE ViewPatterns #-}
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
@@ -64,7 +68,7 @@ evalExpr' (fexpr :$ argExprs) = do
         where
             app f l = case (getErrors f, getErrors $ OList l) of
                 (Nothing, Nothing) -> app' f l where
-                    app' (OFunc f) (x:xs) = app (f x) xs
+                    app' (OFunc f') (x:xs) = app (f' x) xs
                     app' a [] = a
                     app' x _ = OError ["Can't apply arguments to " ++ oTypeStr x]
                 (Just err, _     ) -> OError [err]

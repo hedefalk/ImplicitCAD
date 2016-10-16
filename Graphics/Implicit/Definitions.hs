@@ -1,9 +1,13 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright 2014 2015, Julia Longtin (julial@turinglace.com)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
--- Released under the GNU GPL, see LICENSE
+-- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances, OverlappingInstances #-}
+-- This module deliberately declares orphan instances of Show.
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+-- Required.
+{-# LANGUAGE FlexibleInstances #-}
 
 -- Definitions of the types (and a few functions) used in ImplicitCAD.
 
@@ -11,6 +15,7 @@ module Graphics.Implicit.Definitions (
     ℝ,
     ℝ2,
     ℝ3,
+    minℝ,
     ℕ,
     (⋅),
     (⋯*),
@@ -69,8 +74,6 @@ module Graphics.Implicit.Definitions (
     )
 where
 
--- a few imports for great evil :(
-
 -- we want global IO refs.
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
@@ -84,11 +87,38 @@ type ℝ = Double
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
 
-type ℕ = Int
+minℝ :: ℝ
+-- for Floats.
+--minℝ = 0.00000011920928955078125 * 2
+
+-- for Doubles.
+minℝ = 0.0000000000000002
+
+type ℕ = Integer
 
 -- TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
+
+
+-- handle additional instances of Show.
+instance Show (ℝ -> ℝ) where
+    show _ = "<function ℝ>"
+
+instance Show (ℝ -> ℝ2) where
+    show _ = "<expand ℝ -> ℝ2>"
+
+instance Show (ℝ2 -> ℝ) where
+    show _ = "<collapse ℝ2 -> ℝ>"
+
+instance Show (ℝ3 -> ℝ) where
+    show _ = "<collapse ℝ3 -> ℝ>"
+
+--instance Show BoxedObj2 where
+--    show _ = "<BoxedObj2>"
+
+--instance Show BoxedObj3 where
+--    show _ = "<BoxedObj3>"
 
 -- TODO: Find a better way to do this?
 class ComponentWiseMultable a where
@@ -101,12 +131,6 @@ instance ComponentWiseMultable ℝ3 where
     (x,y,z) ⋯* (x',y',z') = (x*x', y*y', z*z')
     (x,y,z) ⋯/ (x',y',z') = (x/x', y/y', z/z')
 
--- nxn matrices
--- eg. M2 ℝ = M₂(ℝ)
-type M2 a = ((a,a),(a,a))
-type M3 a = ((a,a,a),(a,a,a),(a,a,a))
-
-
 -- | A chain of line segments, as in SVG
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
 type Polyline = [ℝ2]
@@ -118,18 +142,11 @@ type Triangle = (ℝ3, ℝ3, ℝ3)
 --   with corresponding normals n1, n2, and n3
 type NormedTriangle = ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
-
 -- | A triangle mesh is a bunch of triangles :)
 type TriangleMesh = [Triangle]
 
 -- | A normed triangle mesh is a bunch of normed trianlges!!
 type NormedTriangleMesh = [NormedTriangle]
-
--- $ In Implicit CAD, we consider objects as functions
--- of `outwardness'. The boundary is 0, negative is the
--- interior and positive the exterior. The magnitude is
--- how far out or in.
--- For more details, refer to http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
 
 -- | A 2D object
 type Obj2 = (ℝ2 -> ℝ)
@@ -143,10 +160,10 @@ type Box2 = (ℝ2, ℝ2)
 -- | A 3D box
 type Box3 = (ℝ3, ℝ3)
 
--- | Boxed 2D object
+-- | A Boxed 2D object
 type Boxed2 a = (a, Box2)
 
--- | Boxed 3D object
+-- | A Boxed 3D object
 type Boxed3 a = (a, Box3)
 
 type BoxedObj2 = Boxed2 Obj2
@@ -158,9 +175,9 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      RectR ℝ ℝ2 ℝ2
-    | Circle ℝ
-    | PolygonR ℝ [ℝ2]
+      RectR ℝ ℝ2 ℝ2 -- rounding, start, stop.
+    | Circle ℝ -- radius
+    | PolygonR ℝ [ℝ2] -- rounding, points.
     -- (Rounded) CSG
     | Complement2 SymbolicObj2
     | UnionR2 ℝ [SymbolicObj2]
@@ -183,16 +200,16 @@ data SymbolicObj3 =
     -- Primitives
       Rect3R ℝ ℝ3 ℝ3
     | Sphere ℝ
-    | Cylinder ℝ ℝ ℝ -- h r1 r2
+    | Cylinder ℝ ℝ ℝ
     -- (Rounded) CSG
     | Complement3 SymbolicObj3
     | UnionR3 ℝ [SymbolicObj3]
-    | IntersectR3 ℝ [SymbolicObj3]
     | DifferenceR3 ℝ [SymbolicObj3]
+    | IntersectR3 ℝ [SymbolicObj3]
     -- Simple transforms
     | Translate3 ℝ3 SymbolicObj3
     | Scale3 ℝ3 SymbolicObj3
-    | Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
+    | Rotate3 ℝ3 SymbolicObj3
     | Rotate3V ℝ ℝ3 SymbolicObj3
     -- Boundary mods
     | Outset3 ℝ SymbolicObj3
@@ -252,7 +269,3 @@ errorMessage line msg = do
         else putStrLn $ dropXML False False $ msg'
     return ()
 
--- FIXME: fix this correctly. causes functions passed to objects not to show.
--- HACK: This needs to be fixed correctly someday
-instance Show (a -> b) where
-    show _ = "<function>"

@@ -1,5 +1,9 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
 
 module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 
@@ -39,8 +43,6 @@ import Graphics.Implicit.Definitions
 
 interpolate :: ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ -> ℝ
 interpolate (a,aval) (_,bval) _ _ | aval*bval > 0 = a
-
--- The obvious:
 
 -- The obvious:
 interpolate (a, 0) _ _ _  = a
@@ -106,7 +108,7 @@ interpolate _ (b, 0) _ _  = b
 -}
 
 interpolate (a,aval) (b,bval) f _ =
-    -- Make sure aval > bval, then pass to interpolate_bin
+    -- Make sure aval > bval, then pass to interpolate_lin
     if aval > bval
     then interpolate_lin 0 (a,aval) (b,bval) f
     else interpolate_lin 0 (b,bval) (a,aval) f
@@ -115,6 +117,9 @@ interpolate (a,aval) (b,bval) f _ =
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
+interpolate_lin :: forall a a1.
+                   (Fractional a1, Num a, Ord a, Ord a1) =>
+                   a -> (a1, a1) -> (a1, a1) -> (a1 -> a1) -> a1
 
 interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
     let
@@ -148,6 +153,9 @@ interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
 interpolate_lin _ (a, _) _ _ = a
 
 -- Now for binary searching!
+interpolate_bin :: forall a a1 a2.
+                   (Eq a, Fractional a2, Num a, Num a1, Ord a1) =>
+                   a -> (a2, a1) -> (a2, a1) -> (a2 -> a1) -> a2
 
 -- The termination case:
 

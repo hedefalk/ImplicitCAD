@@ -1,6 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
@@ -29,8 +29,8 @@ runOpenscad s =
         Left e -> Left e
         Right sts -> Right
             $ fmap rearrange
-            $ (\sts -> do
+            $ (\sts' -> do
                 path <- Dir.getCurrentDirectory
-                State.runStateT sts (initial, [], path, (), () )
+                State.runStateT sts' (initial, [], path, (), () )
             )
             $ Monad.mapM_ runStatementI sts

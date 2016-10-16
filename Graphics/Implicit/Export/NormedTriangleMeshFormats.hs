@@ -1,7 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016 Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+{-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Implicit.Export.NormedTriangleMeshFormats where
 
@@ -32,10 +33,10 @@ obj normedtriangles = toLazyText $ vertcode <> normcode <> trianglecode
         vertcode = mconcat $ map v verts
         normcode = mconcat $ map n norms
         trianglecode = mconcat $ do
-            n <- map ((+1).(*3)) [0,1 .. length normedtriangles -1]
+            n' <- map ((+1).(*3)) [0,1 .. length normedtriangles -1]
             let
-                vta = buildInt  n
-                vtb = buildInt (n+1)
-                vtc = buildInt (n+2)
+                vta = buildInt  n'
+                vtb = buildInt (n'+1)
+                vtc = buildInt (n'+2)
             return $ "f " <> vta <> " " <> vtb <> " " <> vtc <> " " <> "\n"
 

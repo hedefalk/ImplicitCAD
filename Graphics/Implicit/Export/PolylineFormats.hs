@@ -1,5 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -14,7 +15,6 @@ import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue)
 import Text.Blaze.Internal (stringValue)
 import qualified Text.Blaze.Svg11.Attributes as A
 
-import Data.List (intersperse)
 import qualified Data.List as List
 
 svg :: [Polyline] -> Text
@@ -49,8 +49,9 @@ hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpret
             . map (\x -> (polylineRadius x, x))
             $ polylines
       polylineRadius [] = 0
-      polylineRadius polyline = max (xmax - xmin) (ymax - ymin) where
-           ((xmin, xmax), (ymin, ymax)) = polylineRadius' polyline
+      polylineRadius polyline' = max (xmax' - xmin') (ymax' - ymin') where
+           ((xmin', xmax'), (ymin', ymax')) = polylineRadius' polyline'
+           polylineRadius' [] = ((0,0),(0,0))
            polylineRadius' [(x,y)] = ((x,x),(y,y))
            polylineRadius' ((x,y):ps) = ((min x xmin,max x xmax),(min y ymin, max y ymax))
                 where ((xmin, xmax), (ymin, ymax)) = polylineRadius' ps

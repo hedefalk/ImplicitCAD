@@ -1,12 +1,13 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.Render.GetSegs where
+module Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs') where
 
-import Graphics.Implicit.Definitions
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline)
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 import Graphics.Implicit.Export.Util (centroid)
-import Data.VectorSpace
+import Data.VectorSpace ((^-^))
 
 {- The goal of getSegs is to create polylines to separate
    the interior and exterior vertices of a square intersecting
@@ -54,8 +55,6 @@ import Data.VectorSpace
 -}
 
 getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
-{-- # INLINE getSegs #-}
-
 getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
     let
         (x,y) = p1
@@ -72,6 +71,9 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
         midy2 = (midy2V, y + dy)
 
         notPointLine (np1:np2:[]) = np1 /= np2
+        notPointLine [] = False
+        notPointLine [_] = False
+        notPointLine (_ : (_ : (_ : _))) = False
 
         -- takes straight lines between mid points and subdivides them to
         -- account for sharp corners, etc.
@@ -146,9 +148,7 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
 
 
 -- A convenience function, we don't actually care too much about
-
-{-- # INLINE getSegs' #-}
-
+getSegs' :: (ℝ, ℝ) -> (ℝ, ℝ) -> ((ℝ, ℝ) -> ℝ) -> (ℝ, ℝ, ℝ, ℝ) -> [Polyline]
 getSegs' (x1, y1) (x2, y2) obj (midx1V,midx2V,midy1V,midy2V) =
     let
         x1y1 = obj (x1, y1)

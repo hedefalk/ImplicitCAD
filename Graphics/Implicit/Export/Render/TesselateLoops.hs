@@ -1,5 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
@@ -7,7 +8,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
 import Graphics.Implicit.Export.Util (centroid)
 import Data.VectorSpace
-import Data.Cross
+import Data.Cross hiding (normal)
 
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 

@@ -1,9 +1,13 @@
 -- Implicit CAD. Copyright (C) 2012, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs) where
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
 
-import Graphics.Implicit.Definitions
+module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs, reducePolyline) where
+
+import Graphics.Implicit.Definitions (minℝ, Polyline, ℝ)
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
 cleanLoopsFromSegs =
@@ -19,15 +23,17 @@ joinSegs (present:remaining) =
             if last ps == last present then (Just (reverse $ p3:ps), segs) else
             case findNext segs of (res1,res2) -> (res1,(p3:ps):res2)
         findNext [] = (Nothing, [])
+        findNext (([]):_) = (Nothing, [])
     in
         case findNext remaining of
             (Nothing, _) -> present:(joinSegs remaining)
             (Just match, others) -> joinSegs $ (present ++ tail match): others
 
--- FIXME: magic number.
+--reducePolyline :: forall t. (Fractional t, Ord t) => [(t, t)] -> [(t, t)]
+reducePolyline :: [(ℝ, ℝ)] -> [(ℝ, ℝ)]
 reducePolyline ((x1,y1):(x2,y2):(x3,y3):others) =
     if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):(x3,y3):others) else
-    if abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) < 0.0001
+    if abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) <= minℝ
        || ( (x2-x1) == 0 && (x3-x1) == 0 && (y2-y1)*(y3-y1) > 0)
     then reducePolyline ((x1,y1):(x3,y3):others)
     else (x1,y1) : reducePolyline ((x2,y2):(x3,y3):others)
@@ -35,10 +41,9 @@ reducePolyline ((x1,y1):(x2,y2):others) =
     if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):others) else (x1,y1):(x2,y2):others
 reducePolyline l = l
 
+polylineNotNull :: [a] -> Bool
 polylineNotNull (_:l) = not (null l)
 polylineNotNull [] = False
-
-
 
 {-cleanLoopsFromSegs =
     connectPolys

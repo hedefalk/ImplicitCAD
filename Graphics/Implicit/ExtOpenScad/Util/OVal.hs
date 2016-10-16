@@ -1,5 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables, TypeSynonymInstances, FlexibleInstances #-}
 
@@ -31,7 +32,7 @@ instance OTypeMirror ℝ where
     toOObj n = ONum n
 
 instance OTypeMirror ℕ where
-    fromOObj (ONum n) = if n == fromIntegral (floor n) then Just (floor n) else Nothing
+    fromOObj (ONum n) = if n == fromInteger (floor n) then Just (floor n) else Nothing
     fromOObj _ = Nothing
     toOObj n = ONum $ fromIntegral n
 
@@ -109,24 +110,24 @@ oTypeStr (OString _ ) = "String"
 oTypeStr (OFunc   _ ) = "Function"
 oTypeStr (OModule _ ) = "Module"
 oTypeStr (OError  _ ) = "Error"
+oTypeStr (OObj2   _ ) = "2D Object"
+oTypeStr (OObj3   _ ) = "3D Object"
 
 getErrors :: OVal -> Maybe String
 getErrors (OError er) = Just $ head er
 getErrors (OList l)   = Monad.msum $ map getErrors l
 getErrors _           = Nothing
 
-
 type Any = OVal
 
+caseOType :: forall c a. a -> (a -> c) -> c
 caseOType = flip ($)
 
 infixr 2 <||>
-
 (<||>) :: forall desiredType out. (OTypeMirror desiredType)
     => (desiredType -> out)
     -> (OVal -> out)
     -> (OVal -> out)
-
 (<||>) f g = \input ->
     let
         coerceAttempt = fromOObj input :: Maybe desiredType
@@ -137,18 +138,10 @@ infixr 2 <||>
 
 divideObjs :: [OVal] -> ([SymbolicObj2], [SymbolicObj3], [OVal])
 divideObjs children =
-    (map fromOObj2 . filter isOObj2 $ children,
-     map fromOObj3 . filter isOObj3 $ children,
-     filter (not . isOObj)          $ children)
+    ([ x | OObj2 x <- children ],
+     [ x | OObj3 x <- children ],
+     filter (not . isOObj) $ children )
         where
-            isOObj2 (OObj2 _) = True
-            isOObj2    _      = False
-            isOObj3 (OObj3 _) = True
-            isOObj3    _      = False
-            isOObj  (OObj2 _) = True
-            isOObj  (OObj3 _) = True
-            isOObj     _      = False
-            fromOObj2 (OObj2 x) = x
-            fromOObj3 (OObj3 x) = x
-
-
+          isOObj  (OObj2 _) = True
+          isOObj  (OObj3 _) = True
+          isOObj  _         = False

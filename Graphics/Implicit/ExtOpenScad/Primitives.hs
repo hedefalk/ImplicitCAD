@@ -1,23 +1,28 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
--- We'd like to parse openscad code, with some improvements, for backwards compatability.
+-- Idealy, we'd like to parse openscad code, with some improvements, for backwards compatability.
 
 -- This file provides primitive objects for the openscad parser.
--- The code is fairly straightforward; an explanation of how
--- the first one works is provided.
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
+-- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Util.ArgParser
-import Graphics.Implicit.ExtOpenScad.Util.OVal
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3)
+
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3), ArgParser)
+
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, argument, example, test, eulerCharacteristic)
+
+import Graphics.Implicit.ExtOpenScad.Util.OVal (caseOType, divideObjs, (<||>))
 
 import qualified Graphics.Implicit.Primitives as Prim
+
 import Data.Maybe (isNothing)
+
 import qualified Data.Either as Either
 import qualified Control.Monad as Monad
 
@@ -26,22 +31,20 @@ import Data.VectorSpace
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]) )]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
 
--- **Exmaple of implementing a module**
--- sphere is a module without a suite named sphere,
+-- sphere is a module without a suite.
 -- this means that the parser will look for this like
 --       sphere(args...);
 sphere :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 sphere = moduleWithoutSuite "sphere" $ do
     example "sphere(3);"
     example "sphere(r=5);"
-    -- What are the arguments?
+    -- arguments:
     -- The radius, r, which is a (real) number.
     -- Because we don't provide a default, this ends right
     -- here if it doesn't get a suitable argument!
     r :: ℝ <- argument "r"
                 `doc` "radius of the sphere"
-    -- So what does this module do?
-    -- It adds a 3D object, a sphere of radius r,
+    -- This module adds a 3D object, a sphere of radius r,
     -- using the sphere implementation in Prim
     -- (Graphics.Implicit.Primitives)
     addObj3 $ Prim.sphere r
@@ -217,7 +220,7 @@ polygon = moduleWithoutSuite "polygon" $ do
                         `doc` "rounding of the polygon corners; ignored for now"
                         `defaultTo` 0
     case paths of
-        [] -> addObj2 $ Prim.polygonR 0 points
+        [] -> addObj2 $ Prim.polygonR r points
         _ -> return $ return []
 
 
@@ -376,8 +379,7 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
     rotateArg    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
 
     let
-        is360m n = 360 * fromIntegral (round $ n / 360) /= n
-        n = fromIntegral $ round $ totalRot / 360
+        is360m n = 360 * fromInteger (round $ n / 360) /= n
         cap = is360m totalRot
             || (Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) ) translateArg
             || (Either.either (is360m) (\f -> is360m (f 0 - f totalRot)) ) rotateArg
