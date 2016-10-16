@@ -1,6 +1,8 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
+*Note:  The most current ImplicitCAD code might be found [in Kallithea](http://faikvm.com/ImplicitCAD).*
+
 Introduction
 ------------
 
